@@ -2,6 +2,7 @@
 import { ref, Ref, onMounted } from "vue";
 import City from "../types/City";
 import cityList from "../data/CityList";
+//@ts-ignore
 import { weatherApiInstance } from "../api";
 import WeatherDataRes from "../types/WeatherDataRes";
 import Graph from "../components/Graph.vue";
@@ -13,7 +14,7 @@ const loggedInUserId = localStorage.getItem("userId");
 const searchQuery = ref("");
 const selectResults: Ref<City[]> = ref([]);
 const weatherData: Ref<WeatherDataRes[]> = ref([]);
-const selectedGraph = ref([]);
+const selectedGraph = ref<WeatherDataRes[]>([]);
 const isShowGraph = ref(false);
 const showResult = ref(false);
 const listCities = ref(cityList);
@@ -137,6 +138,7 @@ const handleLogOut = () => {
 };
 
 const showGraph = (city: WeatherDataRes) => {
+  //@ts-ignore
   selectedGraph.value = city;
 
   tempData.value = JSON.parse(
@@ -159,7 +161,7 @@ const removeCard = (id: number) => {
   const userCitiesKey = `userCities-${userId}`;
   const userCities = JSON.parse(localStorage.getItem(userCitiesKey) || "[]");
 
-  let updatedUserCities = userCities.filter((city) => {
+  let updatedUserCities = userCities.filter((city: any) => {
     for (let i = 0; i < favoriteCity.value.length; i++) {
       if (favoriteCity.value[i].name === city) {
         return true;
@@ -171,15 +173,17 @@ const removeCard = (id: number) => {
   for (let i = localStorage.length - 1; i >= 0; i--) {
     const key = localStorage.key(i);
 
-    if (
-      key.startsWith(`cityTemp-${userId}`) ||
-      key.startsWith(`cityHumid-${userId}`) ||
-      key.startsWith(`cityTime-${userId}`)
-    ) {
-      const cityName = key.split("-").pop();
+    if (key) {
+      if (
+        key.startsWith(`cityTemp-${userId}`) ||
+        key.startsWith(`cityHumid-${userId}`) ||
+        key.startsWith(`cityTime-${userId}`)
+      ) {
+        const cityName = key.split("-").pop();
 
-      if (!updatedUserCities.includes(cityName)) {
-        localStorage.removeItem(key);
+        if (!updatedUserCities.includes(cityName)) {
+          localStorage.removeItem(key);
+        }
       }
     }
   }
@@ -245,7 +249,7 @@ onMounted(() => {
   const userCitiesKey = `userCities-${userId}`;
   const userCities = JSON.parse(localStorage.getItem(userCitiesKey) || "[]");
 
-  userCities.forEach((city) => {
+  userCities.forEach((city: any) => {
     setInterval(() => {
       fetchDataByName("/weather", city)
         .then((res: any) => {
