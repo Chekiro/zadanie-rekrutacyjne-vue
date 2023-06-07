@@ -213,16 +213,13 @@ const fetchDataByName = (url: string, name: string) => {
   return weatherApiInstance.get(url, parameters);
 };
 
-const saveAllParametersToLocalStorage = (
-  city: string,
-  newData: WeatherDataRes
-) => {
-  if (city) {
-    const cityHumid = `cityHumid-${actualUser.value}-${city}`;
+const saveAllParametersToLocalStorage = (newData: WeatherDataRes) => {
+  if (newData) {
+    const cityHumid = `cityHumid-${actualUser.value}-${newData.name}`;
     const humidFromLocalStorage = localStorage.getItem(cityHumid);
-    const cityTemp = `cityTemp-${actualUser.value}-${city}`;
+    const cityTemp = `cityTemp-${actualUser.value}-${newData.name}`;
     const tempFromLocalStorage = localStorage.getItem(cityTemp);
-    const cityTime = `cityTime-${actualUser.value}-${city}`;
+    const cityTime = `cityTime-${actualUser.value}-${newData.name}`;
     const timeFromLocalStorage = localStorage.getItem(cityTime);
     let newArray = [];
     if (humidFromLocalStorage) {
@@ -243,57 +240,59 @@ const saveAllParametersToLocalStorage = (
   }
 };
 
-const checkNewResData = (newData: WeatherDataRes) => {
-  console.log(newData);
-  const existingCityIndex = favoriteCity.value.findIndex(
-    (city) => city.name === newData.name
-  );
-  if (existingCityIndex !== -1) {
-    const existingCity = favoriteCity.value[existingCityIndex];
-    if (existingCity.dt === newData.dt) {
-      console.log("Obiekty są takie same");
-    } else {
-      console.log("Obiekty są różne");
-      favoriteCity.value.splice(existingCityIndex, 1, newData);
-      saveAllParametersToLocalStorage(newData.name, newData);
-    }
-  } else {
-    console.log("Nie znaleziono obiektu");
-  }
-};
-
 onMounted(() => {
   const userId = localStorage.getItem("userId");
   const userCitiesKey = `userCities-${userId}`;
   const userCities = JSON.parse(localStorage.getItem(userCitiesKey) || "[]");
 
   userCities.forEach((city) => {
-    // setInterval(() => {
-    fetchDataByName("/weather", city)
-      .then((res: any) => {
-        const weatherObj = createWeatherDataObject(res);
-        const modifyObj = { ...weatherObj, showGraph: true };
+    setInterval(() => {
+      fetchDataByName("/weather", city)
+        .then((res: any) => {
+          const weatherObj = createWeatherDataObject(res);
+          const modifyObj = { ...weatherObj, showGraph: true };
 
-        // weatherData.value.forEach((obj) => {
-        //   if (obj.id === modifyObj.id) {
-        //     return;
-        //   }
-        // });
+          if (weatherData.value.length === 0) {
+            weatherData.value.push(modifyObj);
+          } else {
+            const existingObject = weatherData.value.find(
+              (obj) => obj.id === modifyObj.id
+            );
 
-        // favoriteCity.value.forEach((obj) => {
-        //   if (obj.id === modifyObj.id) {
-        //   } else {
-        //     favoriteCity.value.push(modifyObj);
-        //   }
-        // });
-        favoriteCity.value.push(modifyObj);
-        weatherData.value.push(modifyObj);
-        checkNewResData(modifyObj);
-      })
-      .catch((error: any) => {
-        console.error(error);
-      });
-    // }, 60000);
+            if (existingObject) {
+              if (existingObject.dt === modifyObj.dt) {
+              } else {
+              }
+            } else {
+              weatherData.value.push(modifyObj);
+            }
+          }
+
+          if (favoriteCity.value.length === 0) {
+            favoriteCity.value.push(modifyObj);
+          } else {
+            const existingObject = favoriteCity.value.find(
+              (obj) => obj.id === modifyObj.id
+            );
+
+            if (existingObject) {
+              if (existingObject.dt === modifyObj.dt) {
+              } else {
+                const index = weatherData.value.indexOf(existingObject);
+                if (index !== -1) {
+                  weatherData.value.splice(index, 1, modifyObj);
+                }
+                saveAllParametersToLocalStorage(modifyObj);
+              }
+            } else {
+              favoriteCity.value.push(modifyObj);
+            }
+          }
+        })
+        .catch((error: any) => {
+          console.error(error);
+        });
+    }, 60000);
   });
 });
 </script>
